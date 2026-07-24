@@ -49,18 +49,18 @@ export default function Reports() {
 
   return (
     <Layout>
-      <header className="mb-6 flex items-end justify-between no-print">
+      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 no-print">
         <div>
           <p className="text-xs text-muted font-mono mb-1">04 / LAPORAN</p>
-          <h1 className="font-display text-3xl font-semibold text-ink">
+          <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink">
             Laporan bulanan
           </h1>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="border border-line rounded px-3 py-2 text-sm"
+            className="border border-line rounded px-3 py-2 text-sm flex-1 min-w-[8rem]"
           >
             {MONTHS.map((m, idx) => (
               <option key={m} value={idx}>{m}</option>
@@ -74,7 +74,7 @@ export default function Reports() {
           />
           <button
             onClick={() => window.print()}
-            className="bg-ledger text-white rounded px-4 py-2 text-sm font-medium hover:bg-ledgerDark transition-colors"
+            className="w-full md:w-auto bg-ledger text-white rounded px-4 py-2 text-sm font-medium hover:bg-ledgerDark transition-colors"
           >
             Print / Export PDF
           </button>
@@ -91,7 +91,7 @@ export default function Reports() {
         <p className="text-sm text-muted">Memuat…</p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-8">
             <div className="bg-surface border border-line rounded-lg p-5">
               <p className="text-xs text-muted mb-1">Total pemasukan</p>
               <p className="num text-lg font-semibold text-ledgerDark">{formatRp(income)}</p>
@@ -126,7 +126,8 @@ export default function Reports() {
 
           <div>
             <p className="text-sm font-medium text-ink mb-3">Rincian transaksi</p>
-            <table className="w-full text-sm border-collapse">
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <table className="w-full text-sm border-collapse min-w-[640px]">
               <thead>
                 <tr className="text-left text-xs text-muted border-b border-line">
                   <th className="py-2">Tanggal</th>
@@ -155,6 +156,7 @@ export default function Reports() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}

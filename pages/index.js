@@ -80,7 +80,7 @@ export default function Dashboard() {
     <Layout>
       <header className="mb-8">
         <p className="text-xs text-muted font-mono mb-1">01 / DASHBOARD</p>
-        <h1 className="font-display text-3xl font-semibold text-ink">
+        <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink">
           Ringkasan keuangan
         </h1>
       </header>
@@ -89,7 +89,7 @@ export default function Dashboard() {
         <p className="text-sm text-muted">Memuat…</p>
       ) : (
         <>
-          <div className="grid grid-cols-4 gap-4 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-10">
             <div className="bg-surface border border-line rounded-lg p-5">
               <p className="text-xs text-muted mb-1">Total saldo</p>
               <p className="num text-xl font-semibold text-ink">
@@ -116,7 +116,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-8 md:mb-10">
             <div className="bg-surface border border-line rounded-lg p-5">
               <p className="text-xs text-muted mb-1">Pemasukan tahun {year}</p>
               <p className="num text-lg font-semibold text-ledgerDark">

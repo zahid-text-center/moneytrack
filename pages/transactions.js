@@ -89,13 +89,13 @@ export default function Transactions() {
     <Layout>
       <header className="mb-8">
         <p className="text-xs text-muted font-mono mb-1">02 / TRANSAKSI</p>
-        <h1 className="font-display text-3xl font-semibold text-ink">
+        <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink">
           Catat transaksi
         </h1>
       </header>
 
-      <div className="grid grid-cols-3 gap-8">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="md:col-span-2 order-2 md:order-1">
           <div className="ledger-rule mb-4" />
           {loading ? (
             <p className="text-sm text-muted">Memuat…</p>
@@ -132,7 +132,7 @@ export default function Transactions() {
           )}
         </div>
 
-        <div>
+        <div className="order-1 md:order-2">
           <form
             onSubmit={handleSubmit}
             className="bg-surface border border-line rounded-lg p-5 space-y-3"
