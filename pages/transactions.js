@@ -124,6 +124,15 @@ export default function Transactions() {
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const load = async () => {
     const [accRes, txRes, catRes] = await Promise.all([
@@ -153,6 +162,15 @@ export default function Transactions() {
   }, [accounts]);
 
   const allCategories = mergeCategories(CATEGORIES, customCategories);
+  const pageSize = isDesktop ? 20 : 15;
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const shownCount = pagedItems.length;
+
+  useEffect(() => {
+    setPage(1);
+  }, [items.length, pageSize]);
 
   const applyBalanceDeltas = async (deltas) => {
     // deltas: { account_id: number }
@@ -279,16 +297,45 @@ export default function Transactions() {
           ) : items.length === 0 ? (
             <p className="text-sm text-muted">Belum ada transaksi.</p>
           ) : (
-            <div>
-              {items.map((t) => (
-                <TransactionRow
-                  key={t.id}
-                  t={t}
-                  onEdit={startEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
+            <>
+              <div>
+                {pagedItems.map((t) => (
+                  <TransactionRow
+                    key={t.id}
+                    t={t}
+                    onEdit={startEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-line">
+                <p className="text-xs text-muted">
+                  Menampilkan {shownCount} dari {items.length} catatan transaksi
+                </p>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-xs border border-line rounded disabled:opacity-40 hover:bg-line"
+                    >
+                      Sebelumnya
+                    </button>
+                    <p className="text-xs text-muted font-mono">
+                      {currentPage} / {totalPages}
+                    </p>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-xs border border-line rounded disabled:opacity-40 hover:bg-line"
+                    >
+                      Selanjutnya
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

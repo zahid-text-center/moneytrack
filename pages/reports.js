@@ -17,26 +17,36 @@ export default function Reports() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
+  const [specificDate, setSpecificDate] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session) return;
     setLoading(true);
-    const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const endDate = new Date(year, month + 1, 0).getDate();
-    const end = `${year}-${String(month + 1).padStart(2, "0")}-${endDate}`;
+
+    let start, end;
+    if (specificDate) {
+      start = specificDate;
+      end = specificDate;
+    } else {
+      start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const endDate = new Date(year, month + 1, 0).getDate();
+      end = `${year}-${String(month + 1).padStart(2, "0")}-${endDate}`;
+    }
+
     supabase
       .from("transactions")
       .select("*, accounts(name)")
       .gte("date", start)
       .lte("date", end)
-      .order("date", { ascending: true })
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (!error) setItems(data);
         setLoading(false);
       });
-  }, [session, month, year]);
+  }, [session, month, year, specificDate]);
 
   const income = items.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const expense = items.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
@@ -55,12 +65,16 @@ export default function Reports() {
           <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink">
             Laporan bulanan
           </h1>
+          <p className="text-xs text-muted mt-1">
+            Terbaru di atas · pilih tanggal di kanan buat lihat 1 hari saja
+          </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <select
             value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-            className="border border-line rounded px-3 py-2 text-sm flex-1 min-w-[8rem]"
+            onChange={(e) => { setMonth(Number(e.target.value)); setSpecificDate(""); }}
+            disabled={!!specificDate}
+            className="border border-line rounded px-3 py-2 text-sm flex-1 min-w-[8rem] disabled:opacity-50"
           >
             {MONTHS.map((m, idx) => (
               <option key={m} value={idx}>{m}</option>
@@ -69,9 +83,27 @@ export default function Reports() {
           <input
             type="number"
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 border border-line rounded px-3 py-2 text-sm num"
+            onChange={(e) => { setYear(Number(e.target.value)); setSpecificDate(""); }}
+            disabled={!!specificDate}
+            className="w-24 border border-line rounded px-3 py-2 text-sm num disabled:opacity-50"
           />
+          <div className="flex items-center gap-1">
+            <input
+              type="date"
+              value={specificDate}
+              onChange={(e) => setSpecificDate(e.target.value)}
+              className="border border-line rounded px-3 py-2 text-sm"
+              title="Lihat transaksi tanggal tertentu saja"
+            />
+            {specificDate && (
+              <button
+                onClick={() => setSpecificDate("")}
+                className="text-xs text-muted hover:text-rust px-2 py-2"
+              >
+                Reset
+              </button>
+            )}
+          </div>
           <button
             onClick={() => window.print()}
             className="w-full md:w-auto bg-ledger text-white rounded px-4 py-2 text-sm font-medium hover:bg-ledgerDark transition-colors"
@@ -83,7 +115,9 @@ export default function Reports() {
 
       <div className="hidden print:block mb-6">
         <h1 className="font-display text-2xl font-semibold text-ink">
-          Laporan Keuangan — {MONTHS[month]} {year}
+          Laporan Keuangan — {specificDate
+            ? new Date(specificDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+            : `${MONTHS[month]} ${year}`}
         </h1>
       </div>
 
