@@ -30,7 +30,7 @@ export default function Login() {
     <div className="min-h-screen bg-paper flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <p className="font-display text-3xl font-semibold text-ink text-center mb-1">
-          Ledger<span className="text-ledger">.</span>
+          Ledgy<span className="text-ledger">.</span>
         </p>
         <p className="text-sm text-muted text-center mb-8">
           Masuk ke buku kas kamu

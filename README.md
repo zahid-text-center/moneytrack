@@ -1,4 +1,4 @@
-# Ledger — Web Money Management
+# Ledgy — Private Ledger & Budgeting Assistant
 
 Aplikasi manajemen keuangan pribadi: dashboard, transaksi, rekening, laporan (print/export PDF), lengkap dengan login, registrasi, dan logout.
 

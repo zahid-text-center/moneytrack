@@ -9,8 +9,8 @@ export default function App({ Component, pageProps }) {
     <ThemeProvider>
       <AuthProvider>
         <Head>
-          <title>Ledgy — Buku Kas Pribadi</title>
-          <meta name="description" content="Aplikasi manajemen keuangan pribadi Ledgy" />
+          <title>Ledgy — Private Ledger & Budgeting Assistant</title>
+          <meta name="description" content="Ledgy: Private Ledger & Budgeting Assistant" />
         </Head>
         <Component {...pageProps} />
         <Analytics />
