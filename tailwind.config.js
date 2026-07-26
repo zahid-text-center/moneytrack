@@ -7,15 +7,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        paper: "#FAFAF6",
-        surface: "#FFFFFF",
-        ink: "#16241E",
-        muted: "#6B7A70",
-        line: "#E4E1D6",
-        ledger: "#1F7A5C",
-        ledgerDark: "#155A43",
-        gold: "#C08A2E",
-        rust: "#B3452C",
+        paper: "rgb(var(--color-paper) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        ledger: "rgb(var(--color-ledger) / <alpha-value>)",
+        ledgerDark: "rgb(var(--color-ledger-dark) / <alpha-value>)",
+        gold: "rgb(var(--color-gold) / <alpha-value>)",
+        rust: "rgb(var(--color-rust) / <alpha-value>)",
       },
       fontFamily: {
         display: ["'Fraunces'", "serif"],

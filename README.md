@@ -49,13 +49,33 @@ Rekomendasi: **Vercel** (pembuat Next.js, gratis untuk proyek personal).
 
 Alternatif lain yang juga gratis: **Netlify** atau **Cloudflare Pages** — caranya mirip (hubungkan repo GitHub, isi environment variables, deploy).
 
+### Mengaktifkan Vercel Analytics
+
+Kode untuk analytics sudah terpasang, tapi perlu diaktifkan sekali di dashboard Vercel:
+1. Buka project kamu di https://vercel.com
+2. Klik tab **Analytics**
+3. Klik **Enable**
+
+Setelah itu, statistik kunjungan (jumlah pengunjung, halaman yang paling sering dibuka, dll) akan mulai muncul di tab tersebut — gratis untuk pemakaian dasar di paket Hobby.
+
 ## Fitur
 
-- **Dashboard** — ringkasan saldo, pemasukan/pengeluaran bulan ini & grafik arus kas per bulan sepanjang tahun.
+- **Dashboard** — rekap hari ini, ringkasan saldo, pemasukan/pengeluaran bulan & tahun ini, grafik arus kas, pie chart pengeluaran per kategori, dan ringkasan anggaran.
 - **Transaksi** — input pemasukan/pengeluaran per rekening & kategori, daftar riwayat.
 - **Rekening** — tambah rekening (bank, dompet, e-wallet) dan saldo awal; saldo otomatis ter-update tiap ada transaksi.
-- **Laporan** — pilih bulan & tahun, lihat total pemasukan/pengeluaran, rincian per kategori, tabel transaksi, dan tombol **Print / Export PDF** (memakai dialog print browser — pilih "Save as PDF").
-- **Login / Register / Logout** — via Supabase Auth (email + kata sandi). Data tiap user terpisah dan aman lewat Row Level Security.
+- **Anggaran** — atur budget bulanan per kategori, lihat progress pemakaian & peringatan kalau sudah lewat batas.
+- **Laporan** — pilih bulan & tahun, lihat total pemasukan/pengeluaran, rincian per kategori, tabel transaksi, dan tombol **Print / Export PDF**.
+- **Tema warna** — 5 pilihan tampilan: Klasik, Gelap, Cerah, Pink Lembut, Blue Jeans (tersimpan otomatis per device).
+- **Login / Register / Logout** — via Supabase Auth. Data tiap user terpisah dan aman lewat Row Level Security.
+
+## Kalau proyek Supabase kamu sudah pernah dibuat sebelumnya
+
+Untuk mengaktifkan fitur **Anggaran per kategori**, jalankan `supabase/migration_budget.sql` di SQL Editor Supabase.
+Untuk mengaktifkan fitur **Total anggaran bulanan**, jalankan juga `supabase/migration_total_budget.sql` di SQL Editor Supabase.
+Untuk mengaktifkan fitur **Kategori kustom**, jalankan juga `supabase/migration_categories.sql` di SQL Editor Supabase.
+
+Kalau baru mulai dari nol, cukup jalankan `supabase/schema.sql` seperti biasa (sudah termasuk semuanya).
+
 
 ## Struktur proyek
 
@@ -83,4 +103,3 @@ moneytrack/
 
 - Semua kalkulasi saldo dihitung dari sisi client saat transaksi ditambahkan — cukup untuk pemakaian personal. Kalau nanti mau dipakai banyak orang sekaligus dalam skala besar, saldo sebaiknya dihitung via database trigger.
 - Kalau butuh fitur tambahan (edit/hapus transaksi, kategori kustom, multi-mata uang, dsb), tinggal bilang saja.
-

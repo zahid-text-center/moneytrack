@@ -37,3 +37,63 @@ create policy "Users manage own transactions"
 create index if not exists idx_accounts_user on accounts(user_id);
 create index if not exists idx_transactions_user on transactions(user_id);
 create index if not exists idx_transactions_date on transactions(date);
+
+-- === Fitur Budgeting ===
+create table if not exists budgets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  category text not null,
+  month int not null check (month between 1 and 12),
+  year int not null,
+  amount numeric not null default 0,
+  created_at timestamptz not null default now(),
+  unique (user_id, category, month, year)
+);
+
+alter table budgets enable row level security;
+
+create policy "Users manage own budgets"
+  on budgets for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists idx_budgets_user on budgets(user_id);
+create index if not exists idx_budgets_month_year on budgets(user_id, month, year);
+
+-- === Total anggaran bulanan (1 angka, terpisah dari anggaran per kategori) ===
+create table if not exists total_budgets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  month int not null check (month between 1 and 12),
+  year int not null,
+  amount numeric not null default 0,
+  created_at timestamptz not null default now(),
+  unique (user_id, month, year)
+);
+
+alter table total_budgets enable row level security;
+
+create policy "Users manage own total budgets"
+  on total_budgets for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists idx_total_budgets_user on total_budgets(user_id);
+
+-- === Kategori kustom buatan sendiri ===
+create table if not exists categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+alter table categories enable row level security;
+
+create policy "Users manage own categories"
+  on categories for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists idx_categories_user on categories(user_id);

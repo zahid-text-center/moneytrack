@@ -2,20 +2,18 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
+import { CATEGORIES, mergeCategories } from "../lib/categories";
+import { localDateStr } from "../lib/date";
 
 function formatRp(n) {
   return "Rp " + Number(n || 0).toLocaleString("id-ID");
 }
 
-const CATEGORIES = [
-  "Gaji", "Makanan", "Transportasi", "Belanja", "Tagihan",
-  "Hiburan", "Kesehatan", "Pendidikan", "Lainnya",
-];
-
 export default function Transactions() {
   const { session } = useAuth();
   const [accounts, setAccounts] = useState([]);
   const [items, setItems] = useState([]);
+  const [customCategories, setCustomCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     type: "expense",
@@ -23,12 +21,12 @@ export default function Transactions() {
     category: CATEGORIES[0],
     account_id: "",
     note: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: localDateStr(),
   });
   const [error, setError] = useState("");
 
   const load = async () => {
-    const [accRes, txRes] = await Promise.all([
+    const [accRes, txRes, catRes] = await Promise.all([
       supabase.from("accounts").select("*").order("created_at"),
       supabase
         .from("transactions")
@@ -36,9 +34,11 @@ export default function Transactions() {
         .order("date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(200),
+      supabase.from("categories").select("*").order("created_at"),
     ]);
     if (!accRes.error) setAccounts(accRes.data);
     if (!txRes.error) setItems(txRes.data);
+    if (!catRes.error) setCustomCategories(catRes.data);
     setLoading(false);
   };
 
@@ -51,6 +51,8 @@ export default function Transactions() {
       setForm((f) => ({ ...f, account_id: accounts[0].id }));
     }
   }, [accounts]);
+
+  const allCategories = mergeCategories(CATEGORIES, customCategories);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -191,7 +193,7 @@ export default function Transactions() {
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 className="mt-1 w-full border border-line rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ledger"
               >
-                {CATEGORIES.map((c) => (
+                {allCategories.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
