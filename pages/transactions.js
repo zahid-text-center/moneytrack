@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
@@ -9,20 +10,119 @@ function formatRp(n) {
   return "Rp " + Number(n || 0).toLocaleString("id-ID");
 }
 
+const ACTION_WIDTH = 132;
+const emptyForm = (accountId) => ({
+  type: "expense",
+  amount: "",
+  category: CATEGORIES[1],
+  account_id: accountId || "",
+  note: "",
+  date: localDateStr(),
+});
+
+function TransactionRow({ t, onEdit, onDelete }) {
+  const [dragX, setDragX] = useState(0);
+  const [startX, setStartX] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  const handleTouchStart = (e) => setStartX(e.touches[0].clientX);
+  const handleTouchMove = (e) => {
+    if (startX === null) return;
+    const diff = e.touches[0].clientX - startX;
+    const base = open ? -ACTION_WIDTH : 0;
+    let next = base + diff;
+    next = Math.max(-ACTION_WIDTH, Math.min(0, next));
+    setDragX(next);
+  };
+  const handleTouchEnd = () => {
+    if (dragX < -ACTION_WIDTH / 2) {
+      setDragX(-ACTION_WIDTH);
+      setOpen(true);
+    } else {
+      setDragX(0);
+      setOpen(false);
+    }
+    setStartX(null);
+  };
+
+  return (
+    <div className="relative border-b border-line overflow-hidden md:overflow-visible">
+      <div
+        className="md:hidden absolute right-0 top-0 bottom-0 flex"
+        style={{ width: ACTION_WIDTH }}
+      >
+        <button
+          onClick={() => { onEdit(t); setDragX(0); setOpen(false); }}
+          className="flex-1 bg-ledger text-white flex flex-col items-center justify-center gap-1 text-[11px]"
+        >
+          <Pencil size={16} /> Edit
+        </button>
+        <button
+          onClick={() => onDelete(t)}
+          className="flex-1 bg-rust text-white flex flex-col items-center justify-center gap-1 text-[11px]"
+        >
+          <Trash2 size={16} /> Hapus
+        </button>
+      </div>
+
+      <div
+        className="relative bg-paper flex items-center justify-between py-3"
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: startX === null ? "transform 0.2s ease" : "none",
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="min-w-0">
+          <p className="text-sm text-ink font-medium truncate">
+            {t.category}
+            {t.note ? ` — ${t.note}` : ""}
+          </p>
+          <p className="text-xs text-muted">
+            {new Date(t.date).toLocaleDateString("id-ID")} · {t.accounts?.name}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <p
+            className={`num font-medium ${
+              t.type === "income" ? "text-ledgerDark" : "text-rust"
+            }`}
+          >
+            {t.type === "income" ? "+" : "-"}
+            {formatRp(t.amount)}
+          </p>
+          <div className="hidden md:flex items-center gap-1">
+            <button
+              onClick={() => onEdit(t)}
+              aria-label="Edit"
+              className="w-7 h-7 flex items-center justify-center rounded text-muted hover:text-ledgerDark hover:bg-ledger/10"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => onDelete(t)}
+              aria-label="Hapus"
+              className="w-7 h-7 flex items-center justify-center rounded text-muted hover:text-rust hover:bg-rust/10"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Transactions() {
   const { session } = useAuth();
   const [accounts, setAccounts] = useState([]);
   const [items, setItems] = useState([]);
   const [customCategories, setCustomCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
-    type: "expense",
-    amount: "",
-    category: CATEGORIES[0],
-    account_id: "",
-    note: "",
-    date: localDateStr(),
-  });
+  const [form, setForm] = useState(emptyForm());
+  const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -54,6 +154,47 @@ export default function Transactions() {
 
   const allCategories = mergeCategories(CATEGORIES, customCategories);
 
+  const applyBalanceDeltas = async (deltas) => {
+    // deltas: { account_id: number }
+    for (const [accId, delta] of Object.entries(deltas)) {
+      if (!delta) continue;
+      const acc = accounts.find((a) => a.id === accId);
+      if (!acc) continue;
+      await supabase
+        .from("accounts")
+        .update({ balance: Number(acc.balance) + delta })
+        .eq("id", accId);
+    }
+  };
+
+  const startEdit = (t) => {
+    setEditingId(t.id);
+    setForm({
+      type: t.type,
+      amount: String(t.amount),
+      category: t.category,
+      account_id: t.account_id,
+      note: t.note || "",
+      date: t.date,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm(emptyForm(accounts[0]?.id));
+    setError("");
+  };
+
+  const handleDelete = async (t) => {
+    if (!window.confirm(`Hapus transaksi "${t.category}" sebesar ${formatRp(t.amount)}?`)) return;
+    const reverseDelta = t.type === "income" ? -Number(t.amount) : Number(t.amount);
+    await applyBalanceDeltas({ [t.account_id]: reverseDelta });
+    await supabase.from("transactions").delete().eq("id", t.id);
+    if (editingId === t.id) cancelEdit();
+    load();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -62,6 +203,40 @@ export default function Transactions() {
       return;
     }
     const amount = Number(form.amount);
+
+    if (editingId) {
+      const original = items.find((t) => t.id === editingId);
+      if (!original) return;
+
+      const deltas = {};
+      const reverseDelta = original.type === "income" ? -Number(original.amount) : Number(original.amount);
+      deltas[original.account_id] = (deltas[original.account_id] || 0) + reverseDelta;
+      const newDelta = form.type === "income" ? amount : -amount;
+      deltas[form.account_id] = (deltas[form.account_id] || 0) + newDelta;
+
+      await applyBalanceDeltas(deltas);
+
+      const { error: txError } = await supabase
+        .from("transactions")
+        .update({
+          account_id: form.account_id,
+          type: form.type,
+          amount,
+          category: form.category,
+          note: form.note,
+          date: form.date,
+        })
+        .eq("id", editingId);
+
+      if (txError) {
+        setError(txError.message);
+        return;
+      }
+      cancelEdit();
+      load();
+      return;
+    }
+
     const { error: txError } = await supabase.from("transactions").insert({
       user_id: session.user.id,
       account_id: form.account_id,
@@ -76,12 +251,9 @@ export default function Transactions() {
       return;
     }
 
-    const account = accounts.find((a) => a.id === form.account_id);
-    const delta = form.type === "income" ? amount : -amount;
-    await supabase
-      .from("accounts")
-      .update({ balance: Number(account.balance) + delta })
-      .eq("id", form.account_id);
+    await applyBalanceDeltas({
+      [form.account_id]: form.type === "income" ? amount : -amount,
+    });
 
     setForm((f) => ({ ...f, amount: "", note: "" }));
     load();
@@ -94,6 +266,9 @@ export default function Transactions() {
         <h1 className="font-display text-2xl md:text-3xl font-semibold text-ink">
           Catat transaksi
         </h1>
+        <p className="text-xs text-muted mt-1 md:hidden">
+          Geser riwayat ke kiri untuk edit atau hapus.
+        </p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -104,31 +279,14 @@ export default function Transactions() {
           ) : items.length === 0 ? (
             <p className="text-sm text-muted">Belum ada transaksi.</p>
           ) : (
-            <div className="space-y-1">
+            <div>
               {items.map((t) => (
-                <div
+                <TransactionRow
                   key={t.id}
-                  className="flex items-center justify-between py-3 border-b border-line"
-                >
-                  <div>
-                    <p className="text-sm text-ink font-medium">
-                      {t.category}
-                      {t.note ? ` — ${t.note}` : ""}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {new Date(t.date).toLocaleDateString("id-ID")} ·{" "}
-                      {t.accounts?.name}
-                    </p>
-                  </div>
-                  <p
-                    className={`num font-medium ${
-                      t.type === "income" ? "text-ledgerDark" : "text-rust"
-                    }`}
-                  >
-                    {t.type === "income" ? "+" : "-"}
-                    {formatRp(t.amount)}
-                  </p>
-                </div>
+                  t={t}
+                  onEdit={startEdit}
+                  onDelete={handleDelete}
+                />
               ))}
             </div>
           )}
@@ -139,7 +297,20 @@ export default function Transactions() {
             onSubmit={handleSubmit}
             className="bg-surface border border-line rounded-lg p-5 space-y-3"
           >
-            <p className="text-sm font-medium text-ink">Transaksi baru</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-ink">
+                {editingId ? "Edit transaksi" : "Transaksi baru"}
+              </p>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="text-xs text-muted hover:text-rust"
+                >
+                  Batal
+                </button>
+              )}
+            </div>
 
             <div className="flex gap-2">
               {["expense", "income"].map((type) => (
@@ -223,7 +394,7 @@ export default function Transactions() {
               type="submit"
               className="w-full bg-ledger text-white rounded py-2 text-sm font-medium hover:bg-ledgerDark transition-colors"
             >
-              Simpan transaksi
+              {editingId ? "Update transaksi" : "Simpan transaksi"}
             </button>
           </form>
         </div>

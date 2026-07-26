@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Layout from "../components/Layout";
+import Collapsible from "../components/Collapsible";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
-import { EXPENSE_CATEGORIES, CATEGORY_COLORS, mergeCategories, colorForCategory } from "../lib/categories";
+import { EXPENSE_CATEGORIES, mergeCategories, colorForCategory } from "../lib/categories";
 import { localDateStr } from "../lib/date";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -143,224 +144,228 @@ export default function Dashboard() {
         <p className="text-sm text-muted">Memuat…</p>
       ) : (
         <>
-          {/* Rekap hari ini */}
-          <div className="bg-surface border border-line rounded-lg p-5 mb-6 flex flex-wrap gap-6 items-center justify-between">
-            <div>
-              <p className="text-xs text-muted mb-1">Hari ini</p>
-              <p className="text-sm text-ink">
-                {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}
-              </p>
-            </div>
-            <div className="flex gap-6">
+          {/* Total saldo + rekap hari ini - selalu tampil */}
+          <div className="bg-surface border border-line rounded-lg p-5 mb-6">
+            <p className="text-xs text-muted mb-1">Total saldo</p>
+            <p className="num text-2xl font-semibold text-ink mb-4">
+              {formatRp(totalBalance)}
+            </p>
+            <div className="flex flex-wrap gap-6 items-center justify-between pt-4 border-t border-line">
               <div>
-                <p className="text-xs text-muted mb-1">Pemasukan</p>
-                <p className="num font-semibold text-ledgerDark">{formatRp(todayIncome)}</p>
+                <p className="text-xs text-muted mb-1">Hari ini</p>
+                <p className="text-sm text-ink">
+                  {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}
+                </p>
               </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Pengeluaran</p>
-                <p className="num font-semibold text-rust">{formatRp(todayExpense)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-1">Selisih</p>
-                <p className="num font-semibold text-ink">{formatRp(todayIncome - todayExpense)}</p>
+              <div className="flex gap-6">
+                <div>
+                  <p className="text-xs text-muted mb-1">Pemasukan</p>
+                  <p className="num font-semibold text-ledgerDark">{formatRp(todayIncome)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted mb-1">Pengeluaran</p>
+                  <p className="num font-semibold text-rust">{formatRp(todayExpense)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted mb-1">Selisih</p>
+                  <p className="num font-semibold text-ink">{formatRp(todayIncome - todayExpense)}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-10">
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Total saldo</p>
-              <p className="num text-xl font-semibold text-ink">
-                {formatRp(totalBalance)}
-              </p>
+          <Collapsible title="Ringkasan bulanan">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Pemasukan bulan ini</p>
+                <p className="num text-xl font-semibold text-ledgerDark">
+                  {formatRp(monthIncome)}
+                </p>
+              </div>
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Pengeluaran bulan ini</p>
+                <p className="num text-xl font-semibold text-rust">
+                  {formatRp(monthExpense)}
+                </p>
+              </div>
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Selisih bulan ini</p>
+                <p className="num text-xl font-semibold text-ink">
+                  {formatRp(monthIncome - monthExpense)}
+                </p>
+              </div>
             </div>
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Pemasukan bulan ini</p>
-              <p className="num text-xl font-semibold text-ledgerDark">
-                {formatRp(monthIncome)}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Pengeluaran bulan ini</p>
-              <p className="num text-xl font-semibold text-rust">
-                {formatRp(monthExpense)}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Selisih bulan ini</p>
-              <p className="num text-xl font-semibold text-ink">
-                {formatRp(monthIncome - monthExpense)}
-              </p>
-            </div>
-          </div>
+          </Collapsible>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-8 md:mb-10">
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Pemasukan tahun {year}</p>
-              <p className="num text-lg font-semibold text-ledgerDark">
-                {formatRp(yearIncome)}
-              </p>
+          <Collapsible title="Ringkasan tahunan">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Pemasukan tahun {year}</p>
+                <p className="num text-lg font-semibold text-ledgerDark">
+                  {formatRp(yearIncome)}
+                </p>
+              </div>
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Pengeluaran tahun {year}</p>
+                <p className="num text-lg font-semibold text-rust">
+                  {formatRp(yearExpense)}
+                </p>
+              </div>
+              <div className="bg-surface border border-line rounded-lg p-5">
+                <p className="text-xs text-muted mb-1">Selisih tahun {year}</p>
+                <p className="num text-lg font-semibold text-ink">
+                  {formatRp(yearIncome - yearExpense)}
+                </p>
+              </div>
             </div>
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Pengeluaran tahun {year}</p>
-              <p className="num text-lg font-semibold text-rust">
-                {formatRp(yearExpense)}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-lg p-5">
-              <p className="text-xs text-muted mb-1">Selisih tahun {year}</p>
-              <p className="num text-lg font-semibold text-ink">
-                {formatRp(yearIncome - yearExpense)}
-              </p>
-            </div>
-          </div>
+          </Collapsible>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
-            <div className="lg:col-span-3 bg-surface border border-line rounded-lg p-6">
+          <Collapsible title="Grafik & ranking">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+              <div className="lg:col-span-3 bg-surface border border-line rounded-lg p-6">
+                <p className="text-sm font-medium text-ink mb-4">
+                  Arus kas per bulan — {year}
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-line))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(v) => formatRp(v)} />
+                    <Bar dataKey="Pemasukan" fill="rgb(var(--color-ledger))" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Pengeluaran" fill="rgb(var(--color-rust))" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="lg:col-span-2 bg-surface border border-line rounded-lg p-6">
+                <p className="text-sm font-medium text-ink mb-4">
+                  Pengeluaran per kategori — bulan ini
+                </p>
+                {pieData.length === 0 ? (
+                  <p className="text-sm text-muted">Belum ada pengeluaran bulan ini.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={85}
+                        paddingAngle={2}
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={entry.name} fill={colorForCategory(entry.name, idx)} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => formatRp(v)} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-surface border border-line rounded-lg p-6">
               <p className="text-sm font-medium text-ink mb-4">
-                Arus kas per bulan — {year}
+                Top 5 kategori pengeluaran — bulan ini
               </p>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-line))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v) => formatRp(v)} />
-                  <Bar dataKey="Pemasukan" fill="rgb(var(--color-ledger))" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="Pengeluaran" fill="rgb(var(--color-rust))" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="lg:col-span-2 bg-surface border border-line rounded-lg p-6">
-              <p className="text-sm font-medium text-ink mb-4">
-                Pengeluaran per kategori — bulan ini
-              </p>
-              {pieData.length === 0 ? (
+              {top5.length === 0 ? (
                 <p className="text-sm text-muted">Belum ada pengeluaran bulan ini.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={45}
-                      outerRadius={85}
-                      paddingAngle={2}
-                    >
-                      {pieData.map((entry, idx) => (
-                        <Cell
-                          key={entry.name}
-                          fill={colorForCategory(entry.name, idx)}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v) => formatRp(v)} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-surface border border-line rounded-lg p-6 mb-8">
-            <p className="text-sm font-medium text-ink mb-4">
-              Top 5 kategori pengeluaran — bulan ini
-            </p>
-            {top5.length === 0 ? (
-              <p className="text-sm text-muted">Belum ada pengeluaran bulan ini.</p>
-            ) : (
-              <div className="space-y-3">
-                {top5.map((item, idx) => (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <span className="w-6 h-6 shrink-0 rounded-full bg-paper border border-line flex items-center justify-center text-xs font-mono text-muted">
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-ink font-medium truncate">{item.name}</span>
-                        <span className="num text-ink shrink-0 ml-2">{formatRp(item.value)}</span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
-                        <div
-                          className="h-full"
-                          style={{
-                            width: `${top5Max ? (item.value / top5Max) * 100 : 0}%`,
-                            backgroundColor: colorForCategory(item.name, idx),
-                          }}
-                        />
+                <div className="space-y-3">
+                  {top5.map((item, idx) => (
+                    <div key={item.name} className="flex items-center gap-3">
+                      <span className="w-6 h-6 shrink-0 rounded-full bg-paper border border-line flex items-center justify-center text-xs font-mono text-muted">
+                        {idx + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-ink font-medium truncate">{item.name}</span>
+                          <span className="num text-ink shrink-0 ml-2">{formatRp(item.value)}</span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
+                          <div
+                            className="h-full"
+                            style={{
+                              width: `${top5Max ? (item.value / top5Max) * 100 : 0}%`,
+                              backgroundColor: colorForCategory(item.name, idx),
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {totalBudgetAmt > 0 && (
-            <div className="bg-surface border border-line rounded-lg p-6 mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-ink">Total anggaran bulan ini</p>
-                <Link href="/budgets" className="text-xs text-ledger font-medium">
-                  Atur anggaran →
-                </Link>
-              </div>
-              <div className="flex justify-between text-sm mb-1.5">
-                <span className={`num font-semibold ${monthExpense > totalBudgetAmt ? "text-rust" : "text-ledgerDark"}`}>
-                  {formatRp(monthExpense)}
-                </span>
-                <span className="num text-muted">dari {formatRp(totalBudgetAmt)}</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-line overflow-hidden">
-                <div
-                  className={`h-full transition-all ${
-                    monthExpense > totalBudgetAmt
-                      ? "bg-rust"
-                      : monthExpense / totalBudgetAmt > 0.75
-                      ? "bg-gold"
-                      : "bg-ledger"
-                  }`}
-                  style={{ width: `${Math.min(100, (monthExpense / totalBudgetAmt) * 100)}%` }}
-                />
-              </div>
-              {monthExpense > totalBudgetAmt && (
-                <p className="text-xs text-rust font-medium mt-1.5">
-                  Sudah lewat {formatRp(monthExpense - totalBudgetAmt)} dari batas anggaran
-                </p>
+                  ))}
+                </div>
               )}
             </div>
-          )}
+          </Collapsible>
 
-          {budgetOverview.length > 0 && (
-            <div className="bg-surface border border-line rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-ink">Anggaran bulan ini</p>
+          {(totalBudgetAmt > 0 || budgetOverview.length > 0) && (
+            <Collapsible
+              title="Anggaran"
+              right={
                 <Link href="/budgets" className="text-xs text-ledger font-medium">
                   Kelola anggaran →
                 </Link>
-              </div>
-              <div className="space-y-3">
-                {budgetOverview.map(({ cat, budgetAmt, spentAmt }) => {
-                  const pct = Math.min(100, (spentAmt / budgetAmt) * 100);
-                  const over = spentAmt > budgetAmt;
-                  const barColor = over ? "bg-rust" : pct > 75 ? "bg-gold" : "bg-ledger";
-                  return (
-                    <div key={cat}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-ink">{cat}</span>
-                        <span className={`num ${over ? "text-rust" : "text-muted"}`}>
-                          {formatRp(spentAmt)} / {formatRp(budgetAmt)}
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
-                        <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+              }
+            >
+              {totalBudgetAmt > 0 && (
+                <div className="bg-surface border border-line rounded-lg p-6 mb-4">
+                  <p className="text-sm font-medium text-ink mb-3">Total anggaran bulan ini</p>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className={`num font-semibold ${monthExpense > totalBudgetAmt ? "text-rust" : "text-ledgerDark"}`}>
+                      {formatRp(monthExpense)}
+                    </span>
+                    <span className="num text-muted">dari {formatRp(totalBudgetAmt)}</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-line overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${
+                        monthExpense > totalBudgetAmt
+                          ? "bg-rust"
+                          : monthExpense / totalBudgetAmt > 0.75
+                          ? "bg-gold"
+                          : "bg-ledger"
+                      }`}
+                      style={{ width: `${Math.min(100, (monthExpense / totalBudgetAmt) * 100)}%` }}
+                    />
+                  </div>
+                  {monthExpense > totalBudgetAmt && (
+                    <p className="text-xs text-rust font-medium mt-1.5">
+                      Sudah lewat {formatRp(monthExpense - totalBudgetAmt)} dari batas anggaran
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {budgetOverview.length > 0 && (
+                <div className="bg-surface border border-line rounded-lg p-6">
+                  <p className="text-sm font-medium text-ink mb-4">Anggaran per kategori</p>
+                  <div className="space-y-3">
+                    {budgetOverview.map(({ cat, budgetAmt, spentAmt }) => {
+                      const pct = Math.min(100, (spentAmt / budgetAmt) * 100);
+                      const over = spentAmt > budgetAmt;
+                      const barColor = over ? "bg-rust" : pct > 75 ? "bg-gold" : "bg-ledger";
+                      return (
+                        <div key={cat}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-ink">{cat}</span>
+                            <span className={`num ${over ? "text-rust" : "text-muted"}`}>
+                              {formatRp(spentAmt)} / {formatRp(budgetAmt)}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-line overflow-hidden">
+                            <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </Collapsible>
           )}
         </>
       )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Plus, X } from "lucide-react";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../lib/AuthContext";
@@ -26,6 +27,9 @@ export default function Budgets() {
   const [totalBudgetInput, setTotalBudgetInput] = useState("");
   const [savingTotal, setSavingTotal] = useState(false);
   const [customCategories, setCustomCategories] = useState([]);
+  const [activeCategories, setActiveCategories] = useState([]); // kategori yang sedang ditampilkan/dianggarkan
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerValue, setPickerValue] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,6 +67,7 @@ export default function Budgets() {
       });
       setBudgets(budgetMap);
       setInputs(budgetMap);
+      setActiveCategories(Object.keys(budgetMap));
 
       const spentMap = {};
       (txRes.data || []).forEach((t) => {
@@ -111,7 +116,33 @@ export default function Budgets() {
     }
   };
 
+  const addCategoryToBudget = () => {
+    if (!pickerValue) return;
+    setActiveCategories((c) => [...c, pickerValue]);
+    setInputs((f) => ({ ...f, [pickerValue]: "" }));
+    setPickerValue("");
+    setShowPicker(false);
+  };
+
+  const removeCategoryFromBudget = async (cat) => {
+    if (!window.confirm(`Hapus anggaran untuk kategori "${cat}" bulan ini?`)) return;
+    await supabase
+      .from("budgets")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("category", cat)
+      .eq("month", month)
+      .eq("year", year);
+    setActiveCategories((c) => c.filter((x) => x !== cat));
+    setBudgets((b) => {
+      const next = { ...b };
+      delete next[cat];
+      return next;
+    });
+  };
+
   const allExpenseCategories = mergeCategories(EXPENSE_CATEGORIES, customCategories);
+  const availableToAdd = allExpenseCategories.filter((c) => !activeCategories.includes(c));
   const totalBudget = Object.values(budgets).reduce((s, v) => s + v, 0);
   const totalSpent = Object.values(spent).reduce((s, v) => s + v, 0);
 
@@ -206,69 +237,123 @@ export default function Budgets() {
             )}
           </div>
 
-          <div className="space-y-3">
-            {allExpenseCategories.map((cat) => {
-              const budgetAmt = budgets[cat] || 0;
-              const spentAmt = spent[cat] || 0;
-              const pct = budgetAmt > 0 ? Math.min(100, (spentAmt / budgetAmt) * 100) : 0;
-              const over = budgetAmt > 0 && spentAmt > budgetAmt;
-              const barColor = over ? "bg-rust" : pct > 75 ? "bg-gold" : "bg-ledger";
-
-              return (
-                <div
-                  key={cat}
-                  className="bg-surface border border-line rounded-lg p-4"
-                >
-                  <div className="flex items-center justify-between mb-2 gap-3">
-                    <p className="text-sm font-medium text-ink">{cat}</p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <input
-                        type="number"
-                        value={inputs[cat] ?? ""}
-                        onChange={(e) =>
-                          setInputs((f) => ({ ...f, [cat]: e.target.value }))
-                        }
-                        placeholder="0"
-                        className="w-28 border border-line rounded px-2 py-1.5 text-sm num text-right focus:outline-none focus:ring-2 focus:ring-ledger"
-                      />
-                      <button
-                        onClick={() => saveBudget(cat)}
-                        disabled={savingCat === cat}
-                        className="text-xs bg-ledger text-white rounded px-3 py-1.5 font-medium hover:bg-ledgerDark transition-colors disabled:opacity-60"
-                      >
-                        {savingCat === cat ? "…" : "Simpan"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {budgetAmt > 0 ? (
-                    <>
-                      <div className="w-full h-2 rounded-full bg-line overflow-hidden">
-                        <div
-                          className={`h-full ${barColor} transition-all`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between mt-1.5">
-                        <p className={`text-xs num ${over ? "text-rust" : "text-muted"}`}>
-                          {formatRp(spentAmt)} / {formatRp(budgetAmt)}
-                        </p>
-                        {over && (
-                          <p className="text-xs text-rust font-medium">
-                            Lewat {formatRp(spentAmt - budgetAmt)}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-xs text-muted">
-                      Belum diatur — sudah terpakai {formatRp(spentAmt)}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-ink">Anggaran per kategori</p>
+            {availableToAdd.length > 0 && !showPicker && (
+              <button
+                onClick={() => setShowPicker(true)}
+                className="flex items-center gap-1.5 text-xs text-ledger font-medium hover:text-ledgerDark"
+              >
+                <Plus size={14} /> Tambah kategori anggaran
+              </button>
+            )}
           </div>
+
+          {showPicker && (
+            <div className="flex items-center gap-2 mb-4 bg-surface border border-line rounded-lg p-3">
+              <select
+                value={pickerValue}
+                onChange={(e) => setPickerValue(e.target.value)}
+                className="flex-1 border border-line rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ledger"
+              >
+                <option value="">Pilih kategori…</option>
+                {availableToAdd.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <button
+                onClick={addCategoryToBudget}
+                disabled={!pickerValue}
+                className="text-sm bg-ledger text-white rounded px-4 py-2 font-medium hover:bg-ledgerDark transition-colors disabled:opacity-50"
+              >
+                Tambah
+              </button>
+              <button
+                onClick={() => { setShowPicker(false); setPickerValue(""); }}
+                aria-label="Batal"
+                className="w-9 h-9 flex items-center justify-center rounded text-muted hover:bg-line"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
+          {activeCategories.length === 0 ? (
+            <p className="text-sm text-muted">
+              Belum ada kategori yang dianggarkan. Klik "Tambah kategori anggaran" buat mulai.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {activeCategories.map((cat) => {
+                const budgetAmt = budgets[cat] || 0;
+                const spentAmt = spent[cat] || 0;
+                const pct = budgetAmt > 0 ? Math.min(100, (spentAmt / budgetAmt) * 100) : 0;
+                const over = budgetAmt > 0 && spentAmt > budgetAmt;
+                const barColor = over ? "bg-rust" : pct > 75 ? "bg-gold" : "bg-ledger";
+
+                return (
+                  <div
+                    key={cat}
+                    className="bg-surface border border-line rounded-lg p-4"
+                  >
+                    <div className="flex items-center justify-between mb-2 gap-3">
+                      <p className="text-sm font-medium text-ink">{cat}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <input
+                          type="number"
+                          value={inputs[cat] ?? ""}
+                          onChange={(e) =>
+                            setInputs((f) => ({ ...f, [cat]: e.target.value }))
+                          }
+                          placeholder="0"
+                          className="w-28 border border-line rounded px-2 py-1.5 text-sm num text-right focus:outline-none focus:ring-2 focus:ring-ledger"
+                        />
+                        <button
+                          onClick={() => saveBudget(cat)}
+                          disabled={savingCat === cat}
+                          className="text-xs bg-ledger text-white rounded px-3 py-1.5 font-medium hover:bg-ledgerDark transition-colors disabled:opacity-60"
+                        >
+                          {savingCat === cat ? "…" : "Simpan"}
+                        </button>
+                        <button
+                          onClick={() => removeCategoryFromBudget(cat)}
+                          aria-label="Hapus dari anggaran"
+                          className="w-7 h-7 flex items-center justify-center rounded text-muted hover:text-rust hover:bg-rust/10"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {budgetAmt > 0 ? (
+                      <>
+                        <div className="w-full h-2 rounded-full bg-line overflow-hidden">
+                          <div
+                            className={`h-full ${barColor} transition-all`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-1.5">
+                          <p className={`text-xs num ${over ? "text-rust" : "text-muted"}`}>
+                            {formatRp(spentAmt)} / {formatRp(budgetAmt)}
+                          </p>
+                          {over && (
+                            <p className="text-xs text-rust font-medium">
+                              Lewat {formatRp(spentAmt - budgetAmt)}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted">
+                        Belum diisi jumlahnya — sudah terpakai {formatRp(spentAmt)}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </Layout>

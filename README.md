@@ -73,6 +73,7 @@ Setelah itu, statistik kunjungan (jumlah pengunjung, halaman yang paling sering 
 Untuk mengaktifkan fitur **Anggaran per kategori**, jalankan `supabase/migration_budget.sql` di SQL Editor Supabase.
 Untuk mengaktifkan fitur **Total anggaran bulanan**, jalankan juga `supabase/migration_total_budget.sql` di SQL Editor Supabase.
 Untuk mengaktifkan fitur **Kategori kustom**, jalankan juga `supabase/migration_categories.sql` di SQL Editor Supabase.
+Untuk mengaktifkan fitur **Transfer antar rekening**, jalankan juga `supabase/migration_transfers.sql` di SQL Editor Supabase.
 
 Kalau baru mulai dari nol, cukup jalankan `supabase/schema.sql` seperti biasa (sudah termasuk semuanya).
 

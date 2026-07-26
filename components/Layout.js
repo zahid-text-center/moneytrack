@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { LayoutDashboard, ArrowLeftRight, Wallet, FileText, Target, Palette, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Wallet, FileText, Target, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../lib/AuthContext";
 
 const NAV = [
@@ -35,10 +35,10 @@ export default function Layout({ children }) {
       {/* Top bar - mobile only */}
       <div className="no-print md:hidden flex items-center justify-between px-4 py-4 border-b border-line bg-surface sticky top-0 z-20">
         <p className="font-display text-xl font-semibold text-ink leading-none">
-          Ledgy<span className="text-ledger">.</span>
+          Ledger<span className="text-ledger">.</span>
         </p>
         <div className="flex items-center gap-3">
-          <Link href="/settings" aria-label="Tema warna" className="text-ink/70">
+          <Link href="/settings" aria-label="Pengaturan" className="text-ink/70">
             <Settings size={18} />
           </Link>
           <button
@@ -75,9 +75,9 @@ export default function Layout({ children }) {
       <aside className="no-print hidden md:flex w-60 shrink-0 border-r border-line bg-surface flex-col">
         <div className="px-6 py-7 border-b border-line">
           <p className="font-display text-2xl font-semibold text-ink leading-none">
-            Ledgy<span className="text-ledger">.</span>
+            Ledger<span className="text-ledger">.</span>
           </p>
-          <p className="text-xs text-muted mt-1">Private Ledger & Budgeting</p>
+          <p className="text-xs text-muted mt-1">Buku kas pribadi</p>
         </div>
         <nav className="flex-1 py-4">
           {NAV.map((item) => {
