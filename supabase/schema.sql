@@ -117,3 +117,4 @@ create policy "Users manage own transfers"
   with check (auth.uid() = user_id);
 
 create index if not exists idx_transfers_user on transfers(user_id);
+

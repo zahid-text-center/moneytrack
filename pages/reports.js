@@ -17,18 +17,21 @@ export default function Reports() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
-  const [specificDate, setSpecificDate] = useState("");
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const hasRange = !!(rangeStart && rangeEnd);
 
   useEffect(() => {
     if (!session) return;
     setLoading(true);
 
     let start, end;
-    if (specificDate) {
-      start = specificDate;
-      end = specificDate;
+    if (hasRange) {
+      start = rangeStart <= rangeEnd ? rangeStart : rangeEnd;
+      end = rangeStart <= rangeEnd ? rangeEnd : rangeStart;
     } else {
       start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
       const endDate = new Date(year, month + 1, 0).getDate();
@@ -46,7 +49,7 @@ export default function Reports() {
         if (!error) setItems(data);
         setLoading(false);
       });
-  }, [session, month, year, specificDate]);
+  }, [session, month, year, rangeStart, rangeEnd]);
 
   const income = items.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const expense = items.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
@@ -66,14 +69,14 @@ export default function Reports() {
             Laporan bulanan
           </h1>
           <p className="text-xs text-muted mt-1">
-            Terbaru di atas · pilih tanggal di kanan buat lihat 1 hari saja
+            Terbaru di atas · isi rentang tanggal di kanan buat lihat periode tertentu
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <select
             value={month}
-            onChange={(e) => { setMonth(Number(e.target.value)); setSpecificDate(""); }}
-            disabled={!!specificDate}
+            onChange={(e) => { setMonth(Number(e.target.value)); setRangeStart(""); setRangeEnd(""); }}
+            disabled={hasRange}
             className="border border-line rounded px-3 py-2 text-sm flex-1 min-w-[8rem] disabled:opacity-50"
           >
             {MONTHS.map((m, idx) => (
@@ -83,21 +86,29 @@ export default function Reports() {
           <input
             type="number"
             value={year}
-            onChange={(e) => { setYear(Number(e.target.value)); setSpecificDate(""); }}
-            disabled={!!specificDate}
+            onChange={(e) => { setYear(Number(e.target.value)); setRangeStart(""); setRangeEnd(""); }}
+            disabled={hasRange}
             className="w-24 border border-line rounded px-3 py-2 text-sm num disabled:opacity-50"
           />
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <input
               type="date"
-              value={specificDate}
-              onChange={(e) => setSpecificDate(e.target.value)}
+              value={rangeStart}
+              onChange={(e) => setRangeStart(e.target.value)}
               className="border border-line rounded px-3 py-2 text-sm"
-              title="Lihat transaksi tanggal tertentu saja"
+              title="Dari tanggal"
             />
-            {specificDate && (
+            <span className="text-xs text-muted">–</span>
+            <input
+              type="date"
+              value={rangeEnd}
+              onChange={(e) => setRangeEnd(e.target.value)}
+              className="border border-line rounded px-3 py-2 text-sm"
+              title="Sampai tanggal"
+            />
+            {hasRange && (
               <button
-                onClick={() => setSpecificDate("")}
+                onClick={() => { setRangeStart(""); setRangeEnd(""); }}
                 className="text-xs text-muted hover:text-rust px-2 py-2"
               >
                 Reset
@@ -115,8 +126,8 @@ export default function Reports() {
 
       <div className="hidden print:block mb-6">
         <h1 className="font-display text-2xl font-semibold text-ink">
-          Laporan Keuangan — {specificDate
-            ? new Date(specificDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+          Laporan Keuangan — {hasRange
+            ? `${new Date(rangeStart).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} – ${new Date(rangeEnd).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`
             : `${MONTHS[month]} ${year}`}
         </h1>
       </div>
