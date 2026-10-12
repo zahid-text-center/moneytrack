@@ -50,7 +50,15 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="text-xs text-muted">Kata sandi</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-muted">Kata sandi</label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-ledger font-medium"
+              >
+                Lupa password?
+              </Link>
+            </div>
             <input
               type="password"
               required
